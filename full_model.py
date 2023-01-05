@@ -1,7 +1,25 @@
+# may put this function in another utility file
+def import_tensorflow():
+    # Filter tensorflow version warnings
+    import os
+    # https://stackoverflow.com/questions/40426502/is-there-a-way-to-suppress-the-messages-tensorflow-prints/40426709
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
+    import warnings
+    # https://stackoverflow.com/questions/15777951/how-to-suppress-pandas-future-warning
+    warnings.simplefilter(action='ignore', category=FutureWarning)
+    warnings.simplefilter(action='ignore', category=Warning)
+    import tensorflow as tf
+    tf.get_logger().setLevel('INFO')
+    tf.autograph.set_verbosity(0)
+    import logging
+    tf.get_logger().setLevel(logging.ERROR)
+    return tf
+
+tf = import_tensorflow()
+
 from collections import defaultdict
 import random
 import numpy as np
-import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow import keras
 from keras import layers
@@ -10,7 +28,7 @@ from tqdm import tqdm
 
 #run with latest versions of dependencies
 
-directory = "/media/larry/6539-643318/modanet/results/processedimages/images"
+directory = "/media/larry/6539-643318/modanet/results/processedimages/images-test"
 """
 ## Define hyperparameters
 """
@@ -19,7 +37,7 @@ target_size = 32  # Resize the input images.
 representation_dim = 512  # The dimensions of the features vector.
 projection_units = 128  # The projection head of the representation learner.
 num_clusters = 20  # Number of clusters.
-k_neighbours = 2  # Number of neighbours to consider during cluster learning.
+k_neighbours = 5  # Number of neighbours to consider during cluster learning.
 tune_encoder_during_clustering = False  # Freeze the encoder in the cluster learning.
 image_dimension = (256, 256)
 input_shape = image_dimension + (3,)
@@ -27,14 +45,17 @@ input_shape = image_dimension + (3,)
 """
 ## Get data (custom)
 """
-dataset = tf.keras.utils.image_dataset_from_directory(
+import psutil
+print(psutil.Process().memory_info().rss / (1024 * 1024))
+x_data = tf.keras.utils.image_dataset_from_directory(
     directory,
     labels=None,
     image_size = image_dimension
 )
-dataset = dataset.unbatch()
-x_data = np.asarray(list(dataset))
-x_data = x_data[:100]
+x_data = x_data.unbatch()
+x_data = np.asarray(list(x_data))
+x_data = x_data[:161]
+print(psutil.Process().memory_info().rss / (1024 * 1024))
 
 """
 ## Implement data preprocessing
@@ -78,23 +99,23 @@ data_augmentation = keras.Sequential(
 Display a random image
 """
 
-image_idx = np.random.choice(range(x_data.shape[0]))
-image = x_data[image_idx]
-plt.figure(figsize=(3, 3))
-plt.imshow(x_data[image_idx].astype("uint8"))
-_ = plt.axis("off")
+# image_idx = np.random.choice(range(x_data.shape[0]))
+# image = x_data[image_idx]
+# plt.figure(figsize=(3, 3))
+# plt.imshow(x_data[image_idx].astype("uint8"))
+# _ = plt.axis("off")
 # plt.show()
 
 """
 Display a sample of augmented versions of the image
 """
 
-plt.figure(figsize=(10, 10))
-for i in range(9):
-    augmented_images = data_augmentation(np.array([image]))
-    ax = plt.subplot(3, 3, i + 1)
-    plt.imshow(augmented_images[0].numpy().astype("uint8"))
-    plt.axis("off")
+# plt.figure(figsize=(10, 10))
+# for i in range(9):
+#     augmented_images = data_augmentation(np.array([image]))
+#     ax = plt.subplot(3, 3, i + 1)
+#     plt.imshow(augmented_images[0].numpy().astype("uint8"))
+#     plt.axis("off")
 # plt.show()
 
 """
@@ -229,11 +250,12 @@ lr_scheduler = keras.optimizers.schedules.CosineDecay(
 representation_learner.compile(
     optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
 )
+print(psutil.Process().memory_info().rss / (1024 * 1024))
 # TODO: Sometimes runs out of memory when batch size is too big
 history = representation_learner.fit(
     x=x_data,
     batch_size=64,
-    epochs=1,  # for better results, increase the number of epochs to 500.
+    epochs=50,  # for better results, increase the number of epochs to 500.
 )
 
 
@@ -287,17 +309,17 @@ Let's display some neighbors on each row
 nrows = 4
 ncols = k_neighbours + 1
 
-plt.figure(figsize=(12, 12))
-position = 1
-for _ in range(nrows):
-    anchor_idx = np.random.choice(range(x_data.shape[0]))
-    neighbour_indicies = neighbours[anchor_idx]
-    indices = [anchor_idx] + neighbour_indicies.tolist()
-    for j in range(ncols):
-        plt.subplot(nrows, ncols, position)
-        plt.imshow(x_data[indices[j]].astype("uint8"))
-        plt.axis("off")
-        position += 1
+# plt.figure(figsize=(12, 12))
+# position = 1
+# for _ in range(nrows):
+#     anchor_idx = np.random.choice(range(x_data.shape[0]))
+#     neighbour_indicies = neighbours[anchor_idx]
+#     indices = [anchor_idx] + neighbour_indicies.tolist()
+#     for j in range(ncols):
+#         plt.subplot(nrows, ncols, position)
+#         plt.imshow(x_data[indices[j]].astype("uint8"))
+#         plt.axis("off")
+#         position += 1
 # plt.show()
 
 """
@@ -441,6 +463,7 @@ losses = [ClustersConsistencyLoss(), ClustersEntropyLoss(entropy_loss_weight=5)]
 # Create the model inputs and labels.
 #TODO: This step is running out of memory. Use a generator to generate input data.
 inputs = {"anchors": x_data, "neighbours": tf.gather(x_data, neighbours)}
+print(psutil.Process().memory_info().rss / (1024 * 1024))
 labels = tf.ones(shape=(x_data.shape[0]))
 # Compile the model.
 clustering_learner.compile(
@@ -458,7 +481,7 @@ Plot training loss
 plt.plot(history.history["loss"])
 plt.ylabel("loss")
 plt.xlabel("epoch")
-plt.show()
+# plt.show()
 
 """
 ## Cluster analysis
@@ -511,6 +534,10 @@ for c in range(num_clusters):
         position += 1
 
 plt.show()
+plt.savefig("model_examples.png")
+clustering_model.save("saved_model")
+
+#TODO: save model, save plot
 
 """
 ### Compute clustering accuracy
