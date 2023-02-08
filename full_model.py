@@ -26,9 +26,11 @@ from keras import layers
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-#run with latest versions of dependencies
+from tensorflow.python.client import device_lib
+print(device_lib.list_local_devices())
+from keras import backend as K
 
-directory = "/media/larry/6539-643318/modanet/results/processedimages/images-test"
+directory = "images-test"
 """
 ## Define hyperparameters
 """
@@ -45,8 +47,7 @@ input_shape = image_dimension + (3,)
 """
 ## Get data (custom)
 """
-import psutil
-print(psutil.Process().memory_info().rss / (1024 * 1024))
+
 x_data = tf.keras.utils.image_dataset_from_directory(
     directory,
     labels=None,
@@ -54,8 +55,7 @@ x_data = tf.keras.utils.image_dataset_from_directory(
 )
 x_data = x_data.unbatch()
 x_data = np.asarray(list(x_data))
-x_data = x_data[:161]
-print(psutil.Process().memory_info().rss / (1024 * 1024))
+x_data = x_data[:160]
 
 """
 ## Implement data preprocessing
@@ -250,7 +250,6 @@ lr_scheduler = keras.optimizers.schedules.CosineDecay(
 representation_learner.compile(
     optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
 )
-print(psutil.Process().memory_info().rss / (1024 * 1024))
 # TODO: Sometimes runs out of memory when batch size is too big
 history = representation_learner.fit(
     x=x_data,
@@ -463,7 +462,6 @@ losses = [ClustersConsistencyLoss(), ClustersEntropyLoss(entropy_loss_weight=5)]
 # Create the model inputs and labels.
 #TODO: This step is running out of memory. Use a generator to generate input data.
 inputs = {"anchors": x_data, "neighbours": tf.gather(x_data, neighbours)}
-print(psutil.Process().memory_info().rss / (1024 * 1024))
 labels = tf.ones(shape=(x_data.shape[0]))
 # Compile the model.
 clustering_learner.compile(
