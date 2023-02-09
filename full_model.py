@@ -254,7 +254,7 @@ representation_learner.compile(
 history = representation_learner.fit(
     x=x_data,
     batch_size=64,
-    epochs=50,  # for better results, increase the number of epochs to 500.
+    epochs=500,  # for better results, increase the number of epochs to 500.
 )
 
 
