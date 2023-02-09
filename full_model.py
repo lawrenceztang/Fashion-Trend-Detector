@@ -30,7 +30,7 @@ from tensorflow.python.client import device_lib
 print(device_lib.list_local_devices())
 from keras import backend as K
 
-directory = "images-test"
+directory = "images"
 """
 ## Define hyperparameters
 """
@@ -55,7 +55,7 @@ x_data = tf.keras.utils.image_dataset_from_directory(
 )
 x_data = x_data.unbatch()
 x_data = np.asarray(list(x_data))
-x_data = x_data[:160]
+x_data = x_data[:1000]
 
 """
 ## Implement data preprocessing
