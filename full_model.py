@@ -25,10 +25,23 @@ from tensorflow import keras
 from keras import layers
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from tensorflow.keras.utils import Sequence
 
 from tensorflow.python.client import device_lib
 print(device_lib.list_local_devices())
 from keras import backend as K
+
+class DataGenerator(Sequence):
+    def __init__(self, x_set, batch_size):
+        self.x, self.y = x_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        return batch_x
 
 directory = "images"
 """
@@ -56,6 +69,7 @@ x_data = tf.keras.utils.image_dataset_from_directory(
 x_data = x_data.unbatch()
 x_data = np.asarray(list(x_data))
 x_data = x_data[:10000]
+x_gen = DataGenerator(x_data, 32)
 
 """
 ## Implement data preprocessing
@@ -252,7 +266,7 @@ representation_learner.compile(
 )
 # TODO: Sometimes runs out of memory when batch size is too big
 history = representation_learner.fit(
-    x=x_data,
+    x=x_gen,
     batch_size=64,
     epochs=500,  # for better results, increase the number of epochs to 500.
 )
