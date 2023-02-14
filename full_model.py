@@ -250,25 +250,29 @@ class RepresentationLearner(keras.Model):
 """
 ### Train the model
 """
-# Create vision encoder.
-encoder = create_encoder(representation_dim)
-# Create representation learner.
-representation_learner = RepresentationLearner(
-    encoder, projection_units, num_augmentations=2, temperature=0.1
-)
-# Create a a Cosine decay learning rate scheduler.
-lr_scheduler = keras.optimizers.schedules.CosineDecay(
-    initial_learning_rate=0.001, decay_steps=500, alpha=0.1
-)
-# Compile the model.
-representation_learner.compile(
-    optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
-)
-# TODO: Sometimes runs out of memory when batch size is too big
+
+mirrored_strategy = tf.distribute.MirroredStrategy()
+
+with mirrored_strategy.scope():
+    # Create vision encoder.
+    encoder = create_encoder(representation_dim)
+    # Create representation learner.
+    representation_learner = RepresentationLearner(
+        encoder, projection_units, num_augmentations=2, temperature=0.1
+    )
+    # Create a a Cosine decay learning rate scheduler.
+    lr_scheduler = keras.optimizers.schedules.CosineDecay(
+        initial_learning_rate=0.001, decay_steps=500, alpha=0.1
+    )
+    # Compile the model.
+    representation_learner.compile(
+        optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
+    )
+
 history = representation_learner.fit(
     x=x_gen,
     batch_size=64,
-    epochs=100,  # for better results, increase the number of epochs to 500.
+    epochs=100,
 )
 
 
