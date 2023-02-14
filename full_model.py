@@ -33,7 +33,7 @@ from keras import backend as K
 
 class DataGenerator(Sequence):
     def __init__(self, x_set, batch_size):
-        self.x, self.y = x_set
+        self.x = x_set
         self.batch_size = batch_size
 
     def __len__(self):
@@ -69,7 +69,7 @@ x_data = tf.keras.utils.image_dataset_from_directory(
 x_data = x_data.unbatch()
 x_data = np.asarray(list(x_data))
 x_data = x_data[:10000]
-x_gen = DataGenerator(x_data, 32)
+x_gen = DataGenerator(x_data, 64)
 
 """
 ## Implement data preprocessing
@@ -268,7 +268,7 @@ representation_learner.compile(
 history = representation_learner.fit(
     x=x_gen,
     batch_size=64,
-    epochs=500,  # for better results, increase the number of epochs to 500.
+    epochs=100,  # for better results, increase the number of epochs to 500.
 )
 
 
