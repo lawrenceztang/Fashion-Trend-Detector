@@ -293,7 +293,7 @@ optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
 
 history = representation_learner.fit(
     x=x_gen,
-    epochs=1,
+    epochs=80,
     workers=8,
     use_multiprocessing=True
 )
@@ -515,7 +515,7 @@ gen = DataGenerator2(x_data, labels, neighbours, 5)
 
 # Begin training the model.
 #clustering_learner.fit(x=inputs, y=labels, batch_size=5, epochs=50)
-clustering_learner.fit(gen, epochs=50)
+clustering_learner.fit(gen, epochs=5)
 
 """
 Plot training loss
