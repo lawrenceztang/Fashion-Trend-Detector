@@ -511,7 +511,7 @@ clustering_learner.compile(
     loss=losses,
 )
 
-gen = DataGenerator2(x_data, labels, neighbours, 5)
+gen = DataGenerator2(x_data, labels, neighbours, 500)
 
 # Begin training the model.
 #clustering_learner.fit(x=inputs, y=labels, batch_size=5, epochs=50)
