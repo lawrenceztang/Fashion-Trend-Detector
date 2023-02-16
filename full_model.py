@@ -17,6 +17,9 @@ def import_tensorflow():
 
 tf = import_tensorflow()
 
+
+#import tensorflow as tf
+
 from collections import defaultdict
 import random
 import numpy as np
@@ -69,7 +72,7 @@ x_data = tf.keras.utils.image_dataset_from_directory(
 x_data = x_data.unbatch()
 x_data = np.asarray(list(x_data))
 x_data = x_data[:10000]
-x_gen = DataGenerator(x_data, 64)
+x_gen = DataGenerator(x_data, 32)
 
 """
 ## Implement data preprocessing
@@ -252,6 +255,7 @@ class RepresentationLearner(keras.Model):
 """
 
 mirrored_strategy = tf.distribute.MirroredStrategy()
+mirrored_strategy = tf.distribute.get_strategy()
 
 with mirrored_strategy.scope():
     # Create vision encoder.
@@ -264,15 +268,17 @@ with mirrored_strategy.scope():
     lr_scheduler = keras.optimizers.schedules.CosineDecay(
         initial_learning_rate=0.001, decay_steps=500, alpha=0.1
     )
-    # Compile the model.
-    representation_learner.compile(
-        optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
-    )
+# Compile the model.
+representation_learner.compile(
+
+optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
+)
 
 history = representation_learner.fit(
     x=x_gen,
-    batch_size=64,
-    epochs=100,
+    epochs=60,
+    workers=8,
+    use_multiprocessing=True
 )
 
 
