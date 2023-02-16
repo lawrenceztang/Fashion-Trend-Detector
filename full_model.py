@@ -45,6 +45,20 @@ class DataGenerator(Sequence):
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         return batch_x
+    
+class DataGenerator2(Sequence):
+    def __init__(self, x_set, y_set, batch_size):
+        self.x = x_set
+        self.y = y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+        batch_x = {"anchors": self.x["anchors"][idx * self.batch_size:(idx + 1) * self.batch_size], "neighbours": self.x["neighbours"][idx * self.batch_size:(idx + 1) * self.batch_size]}
+        batch_y = y_set[idx * self.batch_size:(idx + 1) * self.batch_size]
+        return batch_x, batch_y
 
 directory = "images"
 """
@@ -493,8 +507,11 @@ clustering_learner.compile(
     loss=losses,
 )
 
+gen = DataGenerator2(inputs, labels, 5)
+
 # Begin training the model.
-clustering_learner.fit(x=inputs, y=labels, batch_size=5, epochs=50)
+#clustering_learner.fit(x=inputs, y=labels, batch_size=5, epochs=50)
+clustering_learner.fit(gen, epochs=50)
 
 """
 Plot training loss
