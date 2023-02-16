@@ -499,7 +499,8 @@ clustering_learner = create_clustering_learner(clustering_model)
 losses = [ClustersConsistencyLoss(), ClustersEntropyLoss(entropy_loss_weight=5)]
 # Create the model inputs and labels.
 #TODO: This step is running out of memory. Use a generator to generate input data.
-inputs = {"anchors": x_data, "neighbours": tf.gather(x_data, neighbours)}
+with tf.device('/CPU:0'):
+    inputs = {"anchors": x_data, "neighbours": tf.gather(x_data, neighbours)}
 labels = tf.ones(shape=(x_data.shape[0]))
 # Compile the model.
 clustering_learner.compile(
