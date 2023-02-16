@@ -60,7 +60,7 @@ class DataGenerator2(Sequence):
         with tf.device('/CPU:0'):
             batch_neighbours = tf.gather(self.x, neighbours[idx * self.batch_size:(idx + 1) * self.batch_size])
         batch_x = {"anchors": self.x[idx * self.batch_size:(idx + 1) * self.batch_size], "neighbours": batch_neighbours}
-        batch_y = y_set[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
         return batch_x, batch_y
 
 directory = "images"
