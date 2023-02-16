@@ -290,7 +290,7 @@ optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
 
 history = representation_learner.fit(
     x=x_gen,
-    epochs=60,
+    epochs=1,
     workers=8,
     use_multiprocessing=True
 )
