@@ -47,16 +47,17 @@ class DataGenerator(Sequence):
         return batch_x
     
 class DataGenerator2(Sequence):
-    def __init__(self, x_set, y_set, batch_size):
+    def __init__(self, x_set, y_set, neighbours, batch_size):
         self.x = x_set
         self.y = y_set
+        self.neighbours = neighbours
         self.batch_size = batch_size
 
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
 
     def __getitem__(self, idx):
-        batch_x = {"anchors": self.x["anchors"][idx * self.batch_size:(idx + 1) * self.batch_size], "neighbours": self.x["neighbours"][idx * self.batch_size:(idx + 1) * self.batch_size]}
+        batch_x = {"anchors": self.x[idx * self.batch_size:(idx + 1) * self.batch_size], "neighbours": tf.gather(self.x, neighbours[idx * self.batch_size:(idx + 1) * self.batch_size])}
         batch_y = y_set[idx * self.batch_size:(idx + 1) * self.batch_size]
         return batch_x, batch_y
 
@@ -499,8 +500,8 @@ clustering_learner = create_clustering_learner(clustering_model)
 losses = [ClustersConsistencyLoss(), ClustersEntropyLoss(entropy_loss_weight=5)]
 # Create the model inputs and labels.
 #TODO: This step is running out of memory. Use a generator to generate input data.
-with tf.device('/CPU:0'):
-    inputs = {"anchors": x_data, "neighbours": tf.gather(x_data, neighbours)}
+# with tf.device('/CPU:0'):
+#     inputs = {"anchors": x_data, "neighbours": tf.gather(x_data, neighbours)}
 labels = tf.ones(shape=(x_data.shape[0]))
 # Compile the model.
 clustering_learner.compile(
@@ -508,7 +509,7 @@ clustering_learner.compile(
     loss=losses,
 )
 
-gen = DataGenerator2(inputs, labels, 5)
+gen = DataGenerator2(x_data, labels, neighbours, 5)
 
 # Begin training the model.
 #clustering_learner.fit(x=inputs, y=labels, batch_size=5, epochs=50)
