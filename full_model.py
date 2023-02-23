@@ -15,9 +15,8 @@ def import_tensorflow():
     tf.get_logger().setLevel(logging.ERROR)
     return tf
 
+import os
 tf = import_tensorflow()
-
-
 #import tensorflow as tf
 
 from collections import defaultdict
@@ -58,7 +57,10 @@ class DataGenerator2(Sequence):
 
     def __getitem__(self, idx):
         with tf.device('/CPU:0'):
+            import time
+            print(time.time())
             batch_neighbours = tf.gather(self.x, neighbours[idx * self.batch_size:(idx + 1) * self.batch_size])
+            print(time.time())
         batch_x = {"anchors": self.x[idx * self.batch_size:(idx + 1) * self.batch_size], "neighbours": batch_neighbours}
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
         return batch_x, batch_y
@@ -283,7 +285,7 @@ with mirrored_strategy.scope():
     )
     # Create a a Cosine decay learning rate scheduler.
     lr_scheduler = keras.optimizers.schedules.CosineDecay(
-        initial_learning_rate=0.001, decay_steps=500, alpha=0.1
+        initial_learning_rate=0.002, decay_steps=65, alpha=0.1
     )
 # Compile the model.
 representation_learner.compile(
@@ -293,12 +295,11 @@ optimizer=tfa.optimizers.AdamW(learning_rate=lr_scheduler, weight_decay=0.0001),
 
 history = representation_learner.fit(
     x=x_gen,
-    epochs=80,
+    epochs=1,
     workers=8,
     use_multiprocessing=True
 )
-
-
+encoder.save('encoder_model')
 """
 Plot training loss
 """
@@ -490,7 +491,8 @@ def create_clustering_learner(clustering_model):
 """
 ### Train model
 """
-
+import os
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 # If tune_encoder_during_clustering is set to False,
 # then freeze the encoder weights.
 for layer in encoder.layers:
@@ -501,21 +503,19 @@ clustering_learner = create_clustering_learner(clustering_model)
 # Instantiate the model losses.
 losses = [ClustersConsistencyLoss(), ClustersEntropyLoss(entropy_loss_weight=5)]
 # Create the model inputs and labels.
-#TODO: This step is running out of memory. Use a generator to generate input data.
-# with tf.device('/CPU:0'):
-#     inputs = {"anchors": x_data, "neighbours": tf.gather(x_data, neighbours)}
-labels = tf.ones(shape=(x_data.shape[0]))
-# Compile the model.
-clustering_learner.compile(
-    optimizer=tfa.optimizers.AdamW(learning_rate=0.0005, weight_decay=0.0001),
-    loss=losses,
-)
 
-gen = DataGenerator2(x_data, labels, neighbours, 500)
+with tf.device('/CPU:0'):
+    labels = tf.ones(shape=(x_data.shape[0]))
+    # Compile the model.
+    clustering_learner.compile(
+        optimizer=tfa.optimizers.AdamW(learning_rate=0.0005, weight_decay=0.0001),
+        loss=losses,
+    )
 
-# Begin training the model.
-#clustering_learner.fit(x=inputs, y=labels, batch_size=5, epochs=50)
-clustering_learner.fit(gen, epochs=5)
+    gen = DataGenerator2(x_data, labels, neighbours, 1000)
+
+    # Begin training the model
+    clustering_learner.fit(gen, epochs=50)
 
 """
 Plot training loss
@@ -579,8 +579,6 @@ for c in range(num_clusters):
 plt.show()
 plt.savefig("model_examples.png")
 clustering_model.save("saved_model")
-
-#TODO: save model, save plot
 
 """
 ### Compute clustering accuracy

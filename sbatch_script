@@ -2,10 +2,13 @@
 #
 #SBATCH --mail-user=lawrencetang@uchicago.edu
 #SBATCH --mail-type=ALL
+#SBATCH --gres=gpu:1
 #SBATCH --partition=titan
 #SBATCH --mem-per-cpu=60000
+#SBATCH --output=/home/lawrencetang/slurm/%j.%N.stdout
+#SBATCH --error=/home/lawrencetang/slurm/%j.%N.stderr
 
 export PATH=$PATH:/usr/local/cuda/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH=/usr/local/cuda/lib
 
-srun python3 full_model.py
+srun python3 SCAN/full_model.py
