@@ -1,0 +1,9 @@
+directory = "images"
+target_size = 32  # Resize the input images.
+representation_dim = 512  # The dimensions of the features vector.
+projection_units = 128  # The projection head of the representation learner.
+num_clusters = 5  # Number of clusters.
+k_neighbours = 5  # Number of neighbours to consider during cluster learning.
+tune_encoder_during_clustering = False  # Freeze the encoder in the cluster learning.
+image_dimension = (256, 256)
+input_shape = image_dimension + (3,)
